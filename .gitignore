@@ -1,0 +1,17 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+build/
+dist/
+shellman-deb/
+pyproject.toml
+uv.lock
+shellman.spec
+
