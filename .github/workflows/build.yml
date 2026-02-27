@@ -1,4 +1,4 @@
-name: Build Shellman RPM
+name: Build Shellman
 
 on:
   push:
@@ -7,6 +7,46 @@ on:
 
 jobs:
 
+  # ─────────────────────────── Linux .deb ───────────────────────────
+  build-deb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install pyinstaller textual
+
+      - name: Build binary
+        run: |
+          pyinstaller --onefile --collect-all rich --collect-all textual \
+            --name shellman src/main.py
+
+      - name: Package as .deb
+        run: |
+          mkdir -p pkg-deb/DEBIAN
+          mkdir -p pkg-deb/usr/local/bin
+          cp dist/shellman pkg-deb/usr/local/bin/shellman
+          chmod 755 pkg-deb/usr/local/bin/shellman
+          chmod 755 pkg-deb/DEBIAN
+          cat > pkg-deb/DEBIAN/control << EOF
+          Package: shellman
+          Version: 1.0.0
+          Architecture: amd64
+          Maintainer: Its-Atharva-Gupta <itsatharva.gupta@gmail.com>
+          Description: A user friendly Terminal based file manager and editor.
+          EOF
+          dpkg-deb --build pkg-deb shellman_amd64.deb
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shellman_amd64.deb
+          path: shellman_amd64.deb
+
+  # ─────────────────────────── Linux .rpm ───────────────────────────
   build-rpm:
     runs-on: ubuntu-latest
     container: fedora:latest
@@ -20,42 +60,81 @@ jobs:
 
       - name: Build binary
         run: |
-          pyinstaller --onefile --collect-all rich --collect-all textual --name shellman main.py
+          pyinstaller --onefile --collect-all rich --collect-all textual \
+            --name shellman src/main.py
 
-      - name: Create RPM spec file
+      - name: Build RPM
         run: |
           mkdir -p ~/rpmbuild/{SPECS,SOURCES,BUILD,RPMS,SRPMS}
-          cp dist/shellman ~/rpmbuild/SOURCES/
-          cat > ~/rpmbuild/SPECS/shellman.spec << EOF
+          cp dist/shellman ~/rpmbuild/SOURCES/shellman
+          cat > ~/rpmbuild/SPECS/shellman.spec << 'SPEC'
           Name:       shellman
           Version:    1.0.0
           Release:    1%{?dist}
           Summary:    A user friendly Terminal based file manager and editor
           License:    MIT
-          
+
           %description
           A user friendly Terminal based file manager and editor built with Textual.
-          
+
           %install
           mkdir -p %{buildroot}/usr/local/bin
           cp %{_sourcedir}/shellman %{buildroot}/usr/local/bin/shellman
           chmod 755 %{buildroot}/usr/local/bin/shellman
-          
+
           %files
           /usr/local/bin/shellman
-          
-          %changelog
-          * $(date "+%a %b %d %Y") Its-Atharva-Gupta <itsatharva.gupta@gmail.com> - 1.0.0-1
-          - Initial release
-          EOF
-
-      - name: Build RPM
-        run: |
+          SPEC
           rpmbuild -bb ~/rpmbuild/SPECS/shellman.spec
-          find ~/rpmbuild/RPMS -name "*.rpm"
+          find ~/rpmbuild/RPMS -name "*.rpm" -exec cp {} . \;
 
-      - name: Upload .rpm
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: shellman-fedora.rpm
-          path: ~/rpmbuild/RPMS/**/*.rpm
+          name: shellman_amd64.rpm
+          path: "*.rpm"
+
+  # ─────────────────────────── Windows .exe ───────────────────────────
+  build-exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install pyinstaller textual
+
+      - name: Build binary
+        run: |
+          pyinstaller --onefile --collect-all rich --collect-all textual `
+            --name shellman src/main.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shellman_amd64.exe
+          path: dist/shellman.exe
+
+  # ─────────────────────────── macOS binary ───────────────────────────
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install pyinstaller textual
+
+      - name: Build binary
+        run: |
+          pyinstaller --onefile --collect-all rich --collect-all textual \
+            --name shellman src/main.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shellman_macos
+          path: dist/shellman
