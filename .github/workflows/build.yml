@@ -23,7 +23,7 @@ jobs:
 
       - name: Build binary
         run: |
-          pyinstaller --onefile --collect-all rich --collect-all textual --name shellman file_manager.py
+          pyinstaller --onefile --collect-all rich --collect-all textual --name shellman main.py
 
       - name: Package as .deb
         run: |
@@ -63,7 +63,7 @@ jobs:
 
       - name: Build binary
         run: |
-          pyinstaller --onefile --collect-all rich --collect-all textual --name shellman file_manager.py
+          pyinstaller --onefile --collect-all rich --collect-all textual --name shellman main.py
 
       - name: Upload .exe
         uses: actions/upload-artifact@v4
@@ -87,7 +87,7 @@ jobs:
 
       - name: Build binary
         run: |
-          pyinstaller --onefile --collect-all rich --collect-all textual --name shellman file_manager.py
+          pyinstaller --onefile --collect-all rich --collect-all textual --name shellman main.py
 
       - name: Upload macOS binary
         uses: actions/upload-artifact@v4
